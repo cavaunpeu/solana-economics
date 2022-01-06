@@ -2,6 +2,7 @@ from collections import OrderedDict
 import os
 import time
 
+from millify import millify
 import numpy as np
 from ruamel.yaml import YAML
 import streamlit as st
@@ -13,6 +14,7 @@ from model import (
   s_inflation,
   s_perc_staked,
   s_staker_yield,
+  s_total_supply
 )
 from utils import CadCadSimulationBuilder
 
@@ -36,6 +38,10 @@ progress_bar = st.sidebar.progress(0)
 progress_text = st.sidebar.text('0.0% Complete')
 
 st.sidebar.markdown('## Economic parameters')
+
+st.sidebar.markdown('### Supply')
+
+init_supply         = st.sidebar.slider("Initial SOL supply (100M)", 1., 10., C['initial_supply'] / 1e8, 1.) * 1e8
 
 st.sidebar.markdown('### Staker')
 
@@ -76,6 +82,7 @@ simulation = CadCadSimulationBuilder.build(
     initial_state={
         'inflation': base_infl_rate,
         'perc_staked': init_perc_staked,
+        'total_supply': init_supply,
         'staker_yield': compute_staker_yield(
           base_infl_rate, vdtr_uptime_freq, vdtr_comm_perc, init_perc_staked
         )
@@ -90,6 +97,7 @@ simulation = CadCadSimulationBuilder.build(
               'inflation': s_inflation,
               'perc_staked': s_perc_staked,
               'staker_yield': s_staker_yield,
+              'total_supply': s_total_supply
             }
         }
     ],
@@ -105,23 +113,28 @@ num_steps = len(df)
 
 # Define stats dashboard
 
-format_float_stat = lambda stat: f"{(stat * 100).round(2).item()}%"
-format_int_stat = lambda stat: stat
+format_float_stat = lambda stat: f"{np.round(stat * 100, 2).item()}%"
+format_int_stat = lambda stat: millify(stat)
 
 stat2meta = OrderedDict({
   'timestep': {
     'label': 'Timestep',
-    'showdelta': False,
+    'delta_func': None,
+    'format_func': format_int_stat
+  },
+  'total_supply': {
+    'label': 'Total Supply',
+    'delta_func': lambda curr, prev: curr - prev,
     'format_func': format_int_stat
   },
   'inflation': {
     'label': 'Inflation',
-    'showdelta': True,
+    'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
   },
   'staker_yield': {
     'label': 'Yield',
-    'showdelta': True,
+    'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
   },
 })
@@ -137,9 +150,9 @@ for i in range(num_steps if run_simulation else 1):
   # Update stats
   cols = stats_dboard.columns(len(stat2meta))
   for ((stat, meta), col) in zip(stat2meta.items(), cols):
-    if prevrow is not None and meta['showdelta']:
-      delta = row[stat].item() - prevrow[stat].item()
-      delta = f"{np.round(delta * 100, 2)}%"
+    if prevrow is not None and meta['delta_func'] is not None:
+      delta = meta['delta_func'](row[stat].item(), prevrow[stat].item())
+      delta = meta['format_func'](delta)
     else:
       delta = None
     with col:

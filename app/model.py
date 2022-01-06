@@ -54,3 +54,7 @@ def s_staker_yield(params, substep, state_history, previous_state, policy_input)
 
     staker_yield = compute_staker_yield(inflation, uptime, commission, perc_staked)
     return 'staker_yield', staker_yield
+
+
+def s_total_supply(params, substep, state_history, previous_state, policy_input):
+  return 'total_supply', previous_state['total_supply'] * (1 + previous_state['inflation'])
