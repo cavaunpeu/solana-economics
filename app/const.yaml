@@ -6,3 +6,4 @@ validator_uptime_frequency: 1
 initial_fraction_staked: .6
 initial_supply: 500_000_000
 total_years: 20
+speed: .25

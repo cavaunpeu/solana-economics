@@ -9,12 +9,12 @@ import streamlit as st
 
 from model import (
   compute_staker_yield,
-  p_inflation,
-  p_perc_staked,
+  p_staker_behavior,
   s_inflation,
-  s_perc_staked,
+  s_sol_staked,
   s_staker_yield,
-  s_total_supply
+  s_total_supply,
+  s_perc_staked,
 )
 from utils import CadCadSimulationBuilder
 
@@ -82,22 +82,23 @@ simulation = CadCadSimulationBuilder.build(
     initial_state={
         'inflation': base_infl_rate,
         'perc_staked': init_perc_staked,
+        'sol_staked': init_perc_staked * init_supply,
         'total_supply': init_supply,
         'staker_yield': compute_staker_yield(
           base_infl_rate, vdtr_uptime_freq, vdtr_comm_perc, init_perc_staked
         )
     },
     partial_state_update_blocks=[
-        {
+      {
             'policies': {
-              'inflation': p_inflation,
-              'perc_staked': p_perc_staked,
+              'staker_behavior': p_staker_behavior,
             },
             'variables': {
-              'inflation': s_inflation,
+              'sol_staked': s_sol_staked,
               'perc_staked': s_perc_staked,
+              'total_supply': s_total_supply,
+              'inflation': s_inflation,
               'staker_yield': s_staker_yield,
-              'total_supply': s_total_supply
             }
         }
     ],
@@ -132,8 +133,8 @@ stat2meta = OrderedDict({
     'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
   },
-  'staker_yield': {
-    'label': 'Yield',
+  'perc_staked': {
+    'label': '% Staked',
     'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
   },
@@ -169,7 +170,7 @@ for i in range(num_steps if run_simulation else 1):
   # Finally
   if run_simulation:
     frac_complete = (i + 1) / num_steps
-    time.sleep(.2)
+    time.sleep(C['speed'])
     progress_bar.progress(frac_complete)
     progress_text.text(f'{(frac_complete * 100):.2f}% Complete')
     prevrow = row
