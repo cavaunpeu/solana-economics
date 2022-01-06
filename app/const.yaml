@@ -1,4 +1,7 @@
 base_inflation_rate: .08
 disinflation_rate: -.15
 long_term_inflation_rate: .015
+validator_commission_fraction: 0
+validator_uptime_frequency: 1
+initial_fraction_staked: .6
 total_years: 20
