@@ -95,19 +95,27 @@ assert df.index.tolist() == df['timestep'].tolist()
 
 # Plot results
 
+stat2label = {
+  'inflation': 'Inflation',
+  'staker_yield': 'Yield'
+}
+stats_dboard = st.empty()
+
 row = df.iloc[[0]]
-inflation_stat = st.empty()
 inflation_plot = st.line_chart(row['inflation'])
 
 for i in range(1, len(df)):
   nextrow = df.iloc[[i]]
   # Compute stats
-  inflation_delta = nextrow['inflation'].item() - row['inflation'].item()
-  inflation_stat.metric(
-    label="Inflation",
-    value=f"{(nextrow['inflation'] * 100).round(2).item()}%",
-    delta=f"{np.round(inflation_delta * 100, 2)}%"
-  )
+  cols = stats_dboard.columns(len(stat2label))
+  for ((stat, label), col) in zip(stat2label.items(), cols):
+    delta = nextrow[stat].item() - row[stat].item()
+    with col:
+      st.metric(
+        label=label,
+        value=f"{(nextrow[stat] * 100).round(2).item()}%",
+        delta=f"{np.round(delta * 100, 2)}%"
+    )
   # Update plots
   inflation_plot.add_rows(nextrow['inflation'])
   # Finally
