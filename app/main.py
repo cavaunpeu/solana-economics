@@ -25,6 +25,15 @@ C = CONSTANTS = YAML(typ='safe').load(open(CONFIG_PATH))
 
 # Define sidebar
 
+st.sidebar.markdown('# Solana Economic Simulator')
+
+run_simulation = st.sidebar.button("Run")
+
+st.sidebar.markdown('## Progress')
+
+progress_bar = st.sidebar.progress(0)
+progress_text = st.sidebar.text('0.0% Complete')
+
 st.sidebar.markdown('## Economic parameters')
 
 st.sidebar.markdown('### Staker')
@@ -41,10 +50,6 @@ st.sidebar.markdown('### Validator')
 
 vdtr_comm_perc      = st.sidebar.slider("Validator commission percentage", 0., 100., C['validator_commission_fraction'] * 100., .5) / 100
 vdtr_uptime_freq    = st.sidebar.slider("Validator uptime frequency", 0., 100., C['validator_uptime_frequency'] * 100., .5) / 100
-
-st.sidebar.markdown('## Simulate mint')
-
-progress_bar = st.sidebar.progress(0)
 
 # Data validation
 
@@ -93,7 +98,11 @@ simulation = CadCadSimulationBuilder.build(
 df = simulation.run()
 assert df.index.tolist() == df['timestep'].tolist()
 
-# Plot results
+# Simulation params
+
+num_steps = len(df)
+
+# Define stats dashboard
 
 stat2label = {
   'inflation': 'Inflation',
@@ -101,23 +110,35 @@ stat2label = {
 }
 stats_dboard = st.empty()
 
-row = df.iloc[[0]]
-inflation_plot = st.line_chart(row['inflation'])
+# Simulate
 
-for i in range(1, len(df)):
-  nextrow = df.iloc[[i]]
-  # Compute stats
+prevrow = None
+
+for i in range(num_steps if run_simulation else 1):
+  row = df.iloc[[i]]
+  # Update stats
   cols = stats_dboard.columns(len(stat2label))
   for ((stat, label), col) in zip(stat2label.items(), cols):
-    delta = nextrow[stat].item() - row[stat].item()
+    if prevrow is not None:
+      delta = row[stat].item() - prevrow[stat].item()
+      delta = f"{np.round(delta * 100, 2)}%"
+    else:
+      delta = None
     with col:
       st.metric(
         label=label,
-        value=f"{(nextrow[stat] * 100).round(2).item()}%",
-        delta=f"{np.round(delta * 100, 2)}%"
-    )
+        value=f"{(row[stat] * 100).round(2).item()}%",
+        delta=delta
+      )
   # Update plots
-  inflation_plot.add_rows(nextrow['inflation'])
+  if i == 0:
+    inflation_plot = st.line_chart(row['inflation'])
+  else:
+    inflation_plot.add_rows(row['inflation'])
   # Finally
-  time.sleep(.15)
-  row = nextrow
+  if run_simulation:
+    frac_complete = (i + 1) / num_steps
+    time.sleep(.2)
+    progress_bar.progress(frac_complete)
+    progress_text.text(f'{(frac_complete * 100):.2f}% Complete')
+    prevrow = row
