@@ -91,6 +91,7 @@ simulation = CadCadSimulationBuilder.build(
 )
 
 df = simulation.run()
+assert df.index.tolist() == df['timestep'].tolist()
 
 # Plot results
 
@@ -112,4 +113,3 @@ for i in range(1, len(df)):
   # Finally
   time.sleep(.15)
   row = nextrow
-
