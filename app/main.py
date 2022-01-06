@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import time
 
@@ -104,11 +105,28 @@ num_steps = len(df)
 
 # Define stats dashboard
 
-stat2label = {
-  'inflation': 'Inflation',
-  'staker_yield': 'Yield'
-}
+format_float_stat = lambda stat: f"{(stat * 100).round(2).item()}%"
+format_int_stat = lambda stat: stat
+
+stat2meta = OrderedDict({
+  'timestep': {
+    'label': 'Timestep',
+    'showdelta': False,
+    'format_func': format_int_stat
+  },
+  'inflation': {
+    'label': 'Inflation',
+    'showdelta': True,
+    'format_func': format_float_stat
+  },
+  'staker_yield': {
+    'label': 'Yield',
+    'showdelta': True,
+    'format_func': format_float_stat
+  },
+})
 stats_dboard = st.empty()
+
 
 # Simulate
 
@@ -117,17 +135,17 @@ prevrow = None
 for i in range(num_steps if run_simulation else 1):
   row = df.iloc[[i]]
   # Update stats
-  cols = stats_dboard.columns(len(stat2label))
-  for ((stat, label), col) in zip(stat2label.items(), cols):
-    if prevrow is not None:
+  cols = stats_dboard.columns(len(stat2meta))
+  for ((stat, meta), col) in zip(stat2meta.items(), cols):
+    if prevrow is not None and meta['showdelta']:
       delta = row[stat].item() - prevrow[stat].item()
       delta = f"{np.round(delta * 100, 2)}%"
     else:
       delta = None
     with col:
       st.metric(
-        label=label,
-        value=f"{(row[stat] * 100).round(2).item()}%",
+        label=meta['label'],
+        value=meta['format_func'](row[stat]),
         delta=delta
       )
   # Update plots
