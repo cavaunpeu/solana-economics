@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod
+
 from collections import OrderedDict
 import os
 import time
@@ -9,6 +9,11 @@ import numpy as np
 from ruamel.yaml import YAML
 import streamlit as st
 
+from chart import (
+  PercStakedAltairChart,
+  DilutionAltairChart,
+  ValuationAltairChart,
+)
 from model import (
   compute_staker_yield,
   compute_unstaked_dilution,
@@ -164,120 +169,6 @@ stat2meta = OrderedDict({
 })
 stats_dboard = st.empty()
 
-# Define plots
-
-
-class AltairChart(ABC):
-
-  def __init__(self, chart, use_container_width=True):
-    self.chart = st.altair_chart(chart, use_container_width=use_container_width)
-
-  def add_rows(self, row):
-    self.chart.add_rows(row)
-
-  @abstractclassmethod
-  def build(cls):
-    raise NotImplementedError
-
-class PercStakedAltairChart(AltairChart):
-
-  def add_rows(self, row):
-    self.chart.add_rows(self._preprocess(row))
-
-  @classmethod
-  def _preprocess(cls, row):
-    return row.assign(perc_staked = row['perc_staked'] * 100)
-
-  @classmethod
-  def build(cls, df):
-    chart = alt.Chart(cls._preprocess(df)).mark_line().encode(
-      x=alt.X('timestep',
-        scale=alt.Scale(domain=(0, num_steps - 1)),
-        axis=alt.Axis(tickMinStep = 1)
-      ),
-      y=alt.Y('perc_staked',
-        scale=alt.Scale(domain=(0, 100)),
-        title="% Total SOL Staked"
-      )
-    ).properties(
-      title='% of Total SOL Staked Over Time'
-    )
-    return cls(chart)
-
-
-class DilutionAltairChart(AltairChart):
-
-  def add_rows(self, row):
-    self.chart.add_rows(self._melt(row))
-
-  @staticmethod
-  def _melt(df):
-    return df[['unstaked_dilution', 'staked_dilution', 'timestep']].melt(
-      'timestep',
-      var_name='cohort',
-      value_name='dilution'
-    ).assign(
-      cohort = lambda df: df['cohort'].str.replace('_dilution', '')
-    ).assign(
-      dilution = lambda df: df['dilution'] * 100
-    )
-
-  @classmethod
-  def build(cls, df):
-    chart = alt.Chart(
-      cls._melt(df)
-    ).mark_line().encode(
-    x=alt.X('timestep',
-      scale=alt.Scale(domain=(0, num_steps - 1))
-    ),
-    y=alt.Y('dilution',
-      scale=alt.Scale(domain=(-10, 10)),
-      title="% Dilution"
-    ),
-    color='cohort'
-    ).properties(
-      title='Token Dilution Over Time'
-    )
-    return cls(chart)
-
-
-class ValuationAltairChart(AltairChart):
-
-  def add_rows(self, row):
-    self.chart.add_rows(self._melt(row))
-
-  @staticmethod
-  def _melt(df):
-    return df[['unstaked_valuation', 'staked_valuation', 'timestep']].melt(
-      'timestep',
-      var_name='cohort',
-      value_name='valuation'
-    ).assign(
-      cohort = lambda df: df['cohort'].str.replace('_valuation', '')
-    )
-
-  @classmethod
-  def build(cls, df):
-    chart = alt.Chart(
-      cls._melt(df)
-    ).mark_line().encode(
-    x=alt.X('timestep',
-      scale=alt.Scale(domain=(0, num_steps - 1)),
-      axis=alt.Axis(tickMinStep = 1)
-    ),
-    y=alt.Y('valuation',
-      scale=alt.Scale(domain=(INITIAL_VALUATION * .25, INITIAL_VALUATION * 1.75)),
-      title="U.S. Dollars ($)"
-    ),
-    color='cohort'
-    ).properties(
-      title={
-        "text": "Capital Valuation Over Time",
-        # "subtitle": ["Initial Balance: ${INITIAL_VALUATION} in SOL", "SOL Price: Fixed"]
-      }
-    )
-    return cls(chart)
-
 
 # Simulate
 
@@ -301,9 +192,9 @@ for i in range(num_steps if run_simulation else 1):
       )
   # Update plots
   if i == 0:
-    perc_staked_chart = PercStakedAltairChart.build(row)
-    dilution_chart = DilutionAltairChart.build(row)
-    valuation_chart = ValuationAltairChart.build(row)
+    perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
+    dilution_chart = DilutionAltairChart.build(row, num_steps)
+    valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
   else:
     perc_staked_chart.add_rows(row)
     dilution_chart.add_rows(row)
