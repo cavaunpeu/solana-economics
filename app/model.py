@@ -20,7 +20,7 @@ def compute_unstaked_dilution(inflation):
   return -inflation / (1 + inflation)
 
 
-def compute_adjusted_staking_yield(inflation, perc_staked):
+def compute_staked_dilution(inflation, perc_staked):
   numer = (inflation / perc_staked) - inflation
   denom = 1 + inflation
   return numer / denom
@@ -90,7 +90,7 @@ def s_unstaked_dilution(params, substep, state_history, previous_state, policy_i
   return 'unstaked_dilution', policy_input['unstaked_dilution']
 
 
-def s_adjusted_staking_yield(params, substep, state_history, previous_state, policy_input):
+def s_staked_dilution(params, substep, state_history, previous_state, policy_input):
   inflation = policy_input['inflation']
   perc_staked = policy_input['perc_staked']
-  return 'adjusted_staking_yield', compute_adjusted_staking_yield(inflation, perc_staked)
+  return 'staked_dilution', compute_staked_dilution(inflation, perc_staked)

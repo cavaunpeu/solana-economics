@@ -1,3 +1,4 @@
+from abc import ABC, abstractclassmethod
 from collections import OrderedDict
 import os
 import time
@@ -11,7 +12,7 @@ import streamlit as st
 from model import (
   compute_staker_yield,
   compute_unstaked_dilution,
-  compute_adjusted_staking_yield,
+  compute_staked_dilution,
   p_staker_behavior,
   s_inflation,
   s_sol_staked,
@@ -19,7 +20,7 @@ from model import (
   s_total_supply,
   s_perc_staked,
   s_unstaked_dilution,
-  s_adjusted_staking_yield
+  s_staked_dilution
 )
 from utils import CadCadSimulationBuilder
 
@@ -93,7 +94,7 @@ simulation = CadCadSimulationBuilder.build(
           base_infl_rate, vdtr_uptime_freq, vdtr_comm_perc, init_perc_staked
         ),
         'unstaked_dilution': compute_unstaked_dilution(base_infl_rate),
-        'adjusted_staking_yield': compute_adjusted_staking_yield(base_infl_rate, init_perc_staked)
+        'staked_dilution': compute_staked_dilution(base_infl_rate, init_perc_staked)
     },
     partial_state_update_blocks=[
       {
@@ -107,7 +108,7 @@ simulation = CadCadSimulationBuilder.build(
               'inflation': s_inflation,
               'staker_yield': s_staker_yield,
               'unstaked_dilution': s_unstaked_dilution,
-              'adjusted_staking_yield': s_adjusted_staking_yield
+              'staked_dilution': s_staked_dilution
             }
         }
     ],
@@ -116,7 +117,6 @@ simulation = CadCadSimulationBuilder.build(
 
 df = simulation.run()
 assert df.index.tolist() == df['timestep'].tolist()
-df.index.name = 'timestep'
 
 # Simulation params
 
@@ -153,18 +153,68 @@ stats_dboard = st.empty()
 
 # Define plots
 
-def build_perc_staked_plot(df):
-  return alt.Chart(df).mark_line().encode(
+
+class AltairChart(ABC):
+
+  def __init__(self, chart, use_container_width=True):
+    self.chart = st.altair_chart(chart, use_container_width=use_container_width)
+
+  def add_rows(self, row):
+    self.chart.add_rows(row)
+
+  @abstractclassmethod
+  def build(cls):
+    raise NotImplementedError
+
+class PercStakedAltairChart(AltairChart):
+
+  @classmethod
+  def build(cls, df):
+    chart = alt.Chart(df).mark_line().encode(
+      x=alt.X('timestep',
+        scale=alt.Scale(domain=(0, num_steps - 1)),
+        axis=alt.Axis(tickMinStep = 1)
+      ),
+      y=alt.Y('perc_staked',
+        scale=alt.Scale(domain=(0, 1))
+      )
+    ).properties(
+      title='% of Total SOL Staked Over Time'
+    )
+    return cls(chart)
+
+
+class DilutionAltairChart(AltairChart):
+
+  def add_rows(self, row):
+    self.chart.add_rows(self._melt(row))
+
+  @staticmethod
+  def _melt(df):
+    return df[['unstaked_dilution', 'staked_dilution', 'timestep']].melt(
+      'timestep',
+      var_name='cohort',
+      value_name='dilution'
+    ).assign(
+      cohort = lambda df: df['cohort'].str.replace('_dilution', '')
+    )
+
+  @classmethod
+  def build(cls, df):
+    chart = alt.Chart(
+      cls._melt(df)
+    ).mark_line().encode(
     x=alt.X('timestep',
       scale=alt.Scale(domain=(0, num_steps - 1)),
       axis=alt.Axis(tickMinStep = 1)
     ),
-    y=alt.Y('perc_staked',
-      scale=alt.Scale(domain=(0, 1))
+      y='dilution',
+      color='cohort'
+    ).properties(
+      title='Token Dilution Over Time'
     )
-  ).properties(
-    title='% of Total SOL Staked Over Time'
-  )
+    return cls(chart)
+
 
 # Simulate
 
@@ -188,12 +238,11 @@ for i in range(num_steps if run_simulation else 1):
       )
   # Update plots
   if i == 0:
-    perc_staked_plot = st.altair_chart(
-      build_perc_staked_plot(row),
-      use_container_width=True
-    )
+    perc_staked_chart = PercStakedAltairChart.build(row)
+    dilution_chart = DilutionAltairChart.build(row)
   else:
-    perc_staked_plot.add_rows(row)
+    perc_staked_chart.add_rows(row)
+    dilution_chart.add_rows(row)
   # Finally
   if run_simulation:
     frac_complete = (i + 1) / num_steps
