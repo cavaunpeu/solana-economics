@@ -2,6 +2,7 @@ from collections import OrderedDict
 import os
 import time
 
+import altair as alt
 from millify import millify
 import numpy as np
 from ruamel.yaml import YAML
@@ -115,6 +116,7 @@ simulation = CadCadSimulationBuilder.build(
 
 df = simulation.run()
 assert df.index.tolist() == df['timestep'].tolist()
+df.index.name = 'timestep'
 
 # Simulation params
 
@@ -149,6 +151,20 @@ stat2meta = OrderedDict({
 })
 stats_dboard = st.empty()
 
+# Define plots
+
+def build_perc_staked_plot(df):
+  return alt.Chart(df).mark_line().encode(
+    x=alt.X('timestep',
+      scale=alt.Scale(domain=(0, num_steps - 1)),
+      axis=alt.Axis(tickMinStep = 1)
+    ),
+    y=alt.Y('perc_staked',
+      scale=alt.Scale(domain=(0, 1))
+    )
+  ).properties(
+    title='% of Total SOL Staked Over Time'
+  )
 
 # Simulate
 
@@ -172,9 +188,12 @@ for i in range(num_steps if run_simulation else 1):
       )
   # Update plots
   if i == 0:
-    inflation_plot = st.line_chart(row['inflation'])
+    perc_staked_plot = st.altair_chart(
+      build_perc_staked_plot(row[['perc_staked', 'timestep']]),
+      use_container_width=True
+    )
   else:
-    inflation_plot.add_rows(row['inflation'])
+    perc_staked_plot.add_rows(row[['perc_staked', 'timestep']])
   # Finally
   if run_simulation:
     frac_complete = (i + 1) / num_steps
