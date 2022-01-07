@@ -9,12 +9,16 @@ import streamlit as st
 
 from model import (
   compute_staker_yield,
+  compute_unstaked_dilution,
+  compute_adjusted_staking_yield,
   p_staker_behavior,
   s_inflation,
   s_sol_staked,
   s_staker_yield,
   s_total_supply,
   s_perc_staked,
+  s_unstaked_dilution,
+  s_adjusted_staking_yield
 )
 from utils import CadCadSimulationBuilder
 
@@ -86,7 +90,9 @@ simulation = CadCadSimulationBuilder.build(
         'total_supply': init_supply,
         'staker_yield': compute_staker_yield(
           base_infl_rate, vdtr_uptime_freq, vdtr_comm_perc, init_perc_staked
-        )
+        ),
+        'unstaked_dilution': compute_unstaked_dilution(base_infl_rate),
+        'adjusted_staking_yield': compute_adjusted_staking_yield(base_infl_rate, init_perc_staked)
     },
     partial_state_update_blocks=[
       {
@@ -99,6 +105,8 @@ simulation = CadCadSimulationBuilder.build(
               'total_supply': s_total_supply,
               'inflation': s_inflation,
               'staker_yield': s_staker_yield,
+              'unstaked_dilution': s_unstaked_dilution,
+              'adjusted_staking_yield': s_adjusted_staking_yield
             }
         }
     ],

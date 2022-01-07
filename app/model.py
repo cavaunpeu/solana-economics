@@ -2,7 +2,7 @@ def compute_staker_yield(inflation, uptime, commission, perc_staked):
   return inflation * uptime * (1 - commission) / perc_staked
 
 
-def compute_inflation(base_rate, grow_rate, ltr, timestep):
+def compute_inflation_rate(base_rate, grow_rate, ltr, timestep):
     """
     Compute the % of token inflation that will occur over upcoming timestep.
 
@@ -14,6 +14,16 @@ def compute_inflation(base_rate, grow_rate, ltr, timestep):
       base_rate * (1 + grow_rate)**timestep,
       ltr
     )
+
+
+def compute_unstaked_dilution(inflation):
+  return -inflation / (1 + inflation)
+
+
+def compute_adjusted_staking_yield(inflation, perc_staked):
+  numer = (inflation / perc_staked) - inflation
+  denom = 1 + inflation
+  return numer / denom
 
 
 def p_staker_behavior(params, substep, state_history, previous_state):
@@ -29,16 +39,20 @@ def p_staker_behavior(params, substep, state_history, previous_state):
     ltr       = params['long_term_infl_rate']
     timestep  = previous_state['timestep'] + 1
 
-    inflation = compute_inflation(base_rate, grow_rate, ltr, timestep)
+    inflation = compute_inflation_rate(base_rate, grow_rate, ltr, timestep)
     total_supply = previous_state['total_supply'] * (1 + previous_state['inflation'])
     award = previous_state['total_supply'] * previous_state['inflation']
-    new_stake = previous_state['sol_staked'] + award  # Change staker withdraw logic here.
+    unstaked_dilution = compute_unstaked_dilution(inflation)
+
+    # Change staker withdraw logic here.
+    new_stake = previous_state['sol_staked'] + award
 
     return {
       'sol_staked': new_stake,
       'perc_staked': new_stake / total_supply,
       'total_supply': total_supply,
-      'inflation': inflation
+      'inflation': inflation,
+      'unstaked_dilution': unstaked_dilution
     }
 
 
@@ -70,3 +84,13 @@ def s_total_supply(params, substep, state_history, previous_state, policy_input)
 
 def s_sol_staked(params, substep, state_history, previous_state, policy_input):
   return 'sol_staked', policy_input['sol_staked']
+
+
+def s_unstaked_dilution(params, substep, state_history, previous_state, policy_input):
+  return 'unstaked_dilution', policy_input['unstaked_dilution']
+
+
+def s_adjusted_staking_yield(params, substep, state_history, previous_state, policy_input):
+  inflation = policy_input['inflation']
+  perc_staked = policy_input['perc_staked']
+  return 'adjusted_staking_yield', compute_adjusted_staking_yield(inflation, perc_staked)
