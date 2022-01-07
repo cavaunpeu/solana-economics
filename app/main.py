@@ -20,7 +20,9 @@ from model import (
   s_total_supply,
   s_perc_staked,
   s_unstaked_dilution,
-  s_staked_dilution
+  s_staked_dilution,
+  s_unstaked_valuation,
+  s_staked_valuation,
 )
 from utils import CadCadSimulationBuilder
 
@@ -76,6 +78,7 @@ if long_term_infl_rate > base_infl_rate:
 # Run simulation
 
 TOTAL_YEARS = C['total_years']
+INITIAL_VALUATION = C['initial_valuation']
 
 simulation = CadCadSimulationBuilder.build(
     system_params={
@@ -84,6 +87,7 @@ simulation = CadCadSimulationBuilder.build(
         'long_term_infl_rate': long_term_infl_rate,
         'vdtr_comm_perc': vdtr_comm_perc,
         'vdtr_uptime_freq': vdtr_uptime_freq,
+        'initial_valuation': INITIAL_VALUATION
     },
     initial_state={
         'inflation': base_infl_rate,
@@ -94,7 +98,9 @@ simulation = CadCadSimulationBuilder.build(
           base_infl_rate, vdtr_uptime_freq, vdtr_comm_perc, init_perc_staked
         ),
         'unstaked_dilution': compute_unstaked_dilution(base_infl_rate),
-        'staked_dilution': compute_staked_dilution(base_infl_rate, init_perc_staked)
+        'staked_dilution': compute_staked_dilution(base_infl_rate, init_perc_staked),
+        'unstaked_valuation': INITIAL_VALUATION,
+        'staked_valuation': INITIAL_VALUATION,
     },
     partial_state_update_blocks=[
       {
@@ -108,7 +114,9 @@ simulation = CadCadSimulationBuilder.build(
               'inflation': s_inflation,
               'staker_yield': s_staker_yield,
               'unstaked_dilution': s_unstaked_dilution,
-              'staked_dilution': s_staked_dilution
+              'staked_dilution': s_staked_dilution,
+              'unstaked_valuation': s_unstaked_valuation,
+              'staked_valuation': s_staked_valuation,
             }
         }
     ],

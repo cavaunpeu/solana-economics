@@ -39,20 +39,32 @@ def p_staker_behavior(params, substep, state_history, previous_state):
     ltr       = params['long_term_infl_rate']
     timestep  = previous_state['timestep'] + 1
 
-    inflation = compute_inflation_rate(base_rate, grow_rate, ltr, timestep)
-    total_supply = previous_state['total_supply'] * (1 + previous_state['inflation'])
-    award = previous_state['total_supply'] * previous_state['inflation']
-    unstaked_dilution = compute_unstaked_dilution(inflation)
+    # Update parameters given previous timestep.
+    inflation_prev = previous_state['inflation']
+    perc_staked_prev = previous_state['perc_staked']
+    unstaked_valuation = (1 + compute_unstaked_dilution(inflation_prev)) * previous_state['unstaked_valuation']
+    staked_valuation = (1 + compute_staked_dilution(inflation_prev, perc_staked_prev)) * previous_state['staked_valuation']
+    total_supply = previous_state['total_supply'] * (1 + inflation_prev)
+    award = previous_state['total_supply'] * inflation_prev
 
-    # Change staker withdraw logic here.
+    # Compute staker behavior for current timestep.
     new_stake = previous_state['sol_staked'] + award
+
+    # Compute parameters for current timestep.
+    inflation = compute_inflation_rate(base_rate, grow_rate, ltr, timestep)
+    perc_staked = new_stake / total_supply
+    unstaked_dilution = compute_unstaked_dilution(inflation)
+    staked_dilution = compute_staked_dilution(inflation, perc_staked)
 
     return {
       'sol_staked': new_stake,
-      'perc_staked': new_stake / total_supply,
+      'perc_staked': perc_staked,
       'total_supply': total_supply,
       'inflation': inflation,
-      'unstaked_dilution': unstaked_dilution
+      'unstaked_dilution': unstaked_dilution,
+      'staked_dilution': staked_dilution,
+      'unstaked_valuation': unstaked_valuation,
+      'staked_valuation': staked_valuation,
     }
 
 
@@ -91,6 +103,12 @@ def s_unstaked_dilution(params, substep, state_history, previous_state, policy_i
 
 
 def s_staked_dilution(params, substep, state_history, previous_state, policy_input):
-  inflation = policy_input['inflation']
-  perc_staked = policy_input['perc_staked']
-  return 'staked_dilution', compute_staked_dilution(inflation, perc_staked)
+  return 'staked_dilution', policy_input['staked_dilution']
+
+
+def s_unstaked_valuation(params, substep, state_history, previous_state, policy_input):
+  return 'unstaked_valuation', policy_input['unstaked_valuation']
+
+
+def s_staked_valuation(params, substep, state_history, previous_state, policy_input):
+  return 'staked_valuation', policy_input['staked_valuation']
