@@ -162,8 +162,11 @@ stat2meta = OrderedDict({
     'format_func': format_float_stat
   },
 })
-stats_dboard = st.empty()
 
+# Define layout
+stats_dboard = st.empty()
+primary_plot_container = st.container()
+secondary_plot_container = st.container()
 
 # Simulate
 
@@ -187,9 +190,13 @@ for i in range(num_steps if run_simulation else 1):
       )
   # Update plots
   if i == 0:
-    perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
-    dilution_chart = DilutionAltairChart.build(row, num_steps)
-    valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
+    with primary_plot_container:
+      perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
+    col1, col2 = secondary_plot_container.columns(2)
+    with col1:
+      dilution_chart = DilutionAltairChart.build(row, num_steps)
+    with col2:
+      valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
   else:
     perc_staked_chart.add_rows(row)
     dilution_chart.add_rows(row)
