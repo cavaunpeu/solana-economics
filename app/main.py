@@ -156,11 +156,6 @@ stat2meta = OrderedDict({
     'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
   },
-  'perc_staked': {
-    'label': '% Staked',
-    'delta_func': lambda curr, prev: (curr - prev) / prev,
-    'format_func': format_float_stat
-  },
   'staker_yield': {
     'label': '% Yield on Stake',
     'delta_func': lambda curr, prev: (curr - prev) / prev,
