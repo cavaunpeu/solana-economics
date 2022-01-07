@@ -189,11 +189,11 @@ for i in range(num_steps if run_simulation else 1):
   # Update plots
   if i == 0:
     perc_staked_plot = st.altair_chart(
-      build_perc_staked_plot(row[['perc_staked', 'timestep']]),
+      build_perc_staked_plot(row),
       use_container_width=True
     )
   else:
-    perc_staked_plot.add_rows(row[['perc_staked', 'timestep']])
+    perc_staked_plot.add_rows(row)
   # Finally
   if run_simulation:
     frac_complete = (i + 1) / num_steps
