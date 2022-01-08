@@ -150,6 +150,11 @@ def constant_behavior_policy(*args, **kwargs):
   """
   return 1
 
+
+def compute_stake_propensity(previous_yield, yield_location, yield_scale):
+  return sigmoid(yield_scale * (previous_yield - yield_location))
+
+
 def proactive_behavior_policy(behavior, previous_yield, yield_location, yield_scale):
   """
   There are two behaviors in the network: to be staked or unstaked.
@@ -157,7 +162,7 @@ def proactive_behavior_policy(behavior, previous_yield, yield_location, yield_sc
   This policy computes the probability that a given member maintains
   their current behavior.
   """
-  stake_propensity = sigmoid(yield_scale * (previous_yield - yield_location))
+  stake_propensity = compute_stake_propensity(previous_yield, yield_location, yield_scale)
   keep_strat_frac = stake_propensity if behavior == 'staked' else 1 - stake_propensity
   return beta.rvs(
     (keep_strat_frac * 100) + 1,

@@ -1,7 +1,11 @@
 from abc import ABC, abstractclassmethod
 
 import altair as alt
+import numpy as np
+import pandas as pd
 import streamlit as st
+
+from model import compute_stake_propensity
 
 
 class AltairChart(ABC):
@@ -138,3 +142,65 @@ class ValuationAltairChart(AltairChart):
       }
     )
     return cls(chart)
+
+
+class DilutionAltairChart(AltairChart):
+
+  def add_rows(self, row):
+    self.chart.add_rows(self._melt(row))
+
+  @staticmethod
+  def _melt(df):
+    return df[['unstaked_dilution', 'staked_dilution', 'timestep']].melt(
+      'timestep',
+      var_name='cohort',
+      value_name='dilution'
+    ).assign(
+      cohort = lambda df: df['cohort'].str.replace('_dilution', '')
+    ).assign(
+      dilution = lambda df: df['dilution'] * 100
+    )
+
+  @classmethod
+  def build(cls, df, num_steps):
+    chart = alt.Chart(
+      cls._melt(df)
+    ).mark_line().encode(
+      x=alt.X('timestep',
+        scale=alt.Scale(domain=(0, num_steps - 1))
+      ),
+      y=alt.Y('dilution',
+        title="% Dilution"
+      ),
+      color='cohort'
+    ).properties(
+      title='Token Dilution Over Time'
+    )
+    return cls(chart)
+
+
+class StakePropensityChart:
+
+  YIELD_VALS = np.linspace(0, .16, 101)
+
+  @classmethod
+  def build(cls, yield_location, yield_scale):
+    y = [compute_stake_propensity(prev_yield, yield_location, yield_scale) for prev_yield in cls.YIELD_VALS]
+    df = pd.DataFrame({
+      'previous_yield': cls.YIELD_VALS * 100,
+      'stake_propensity': y
+    })
+    chart = alt.Chart(df).mark_line().encode(
+      x=alt.X('previous_yield',
+        scale=alt.Scale(domain=(df['previous_yield'].min(), df['previous_yield'].max())),
+        title="Previous Yield %"
+      ),
+      y=alt.Y('stake_propensity',
+        title="Stake Propensity"
+      )
+    ).properties(
+      title={
+        "text": "Stake Propensity vs. Most-Recent Yield on Staked Tokens",
+      }
+    )
+    return chart

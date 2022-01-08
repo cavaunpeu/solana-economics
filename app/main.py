@@ -8,6 +8,7 @@ import numpy as np
 import streamlit as st
 
 from chart import (
+  StakePropensityChart,
   PercStakedAltairChart,
   StakerYieldAltairChart,
   DilutionAltairChart,
@@ -181,6 +182,10 @@ stat2meta = OrderedDict({
 })
 
 # Define layout
+st.altair_chart(
+  StakePropensityChart.build(yield_location, yield_scale),
+  use_container_width=True
+)
 stats_dboard = st.empty()
 primary_plot_container = st.container()
 secondary_plot_container = st.container()
