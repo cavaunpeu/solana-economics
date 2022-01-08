@@ -6,5 +6,7 @@ validator_uptime_frequency: 1
 initial_fraction_staked: .6
 initial_supply: 500_000_000
 initial_valuation: 10000
+yield_location: .05
+yield_scale: 30.
 total_years: 20
 speed: .25

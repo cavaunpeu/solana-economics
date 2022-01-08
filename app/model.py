@@ -1,4 +1,9 @@
-from utils import load_constants
+import math
+from scipy.stats import beta
+
+
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
 
 
 def compute_staker_yield(inflation, uptime, commission, perc_staked):
@@ -58,8 +63,18 @@ def p_staker_behavior(params, substep, state_history, previous_state):
   _sol_unstaked = total_supply - _sol_staked
 
   # Update staked and unstaked behaviors.
-  staked_keep_strat_frac = params['staked_policy'](previous_state['staker_yield'], behavior='staked')
-  unstaked_keep_strat_frac = params['unstaked_policy'](previous_state['staker_yield'], behavior='unstaked')
+  staked_keep_strat_frac = params['staked_policy'](
+    'staked',
+    previous_state['staker_yield'],
+    params['yield_location'],
+    params['yield_scale'],
+  )
+  unstaked_keep_strat_frac = params['unstaked_policy'](
+    'unstaked',
+    previous_state['staker_yield'],
+    params['yield_location'],
+    params['yield_scale'],
+  )
   sol_staked = staked_keep_strat_frac * _sol_staked + (1 - unstaked_keep_strat_frac) * _sol_unstaked
 
   # Update definite parameters for current timestep.
@@ -126,10 +141,7 @@ def s_staked_valuation(params, substep, state_history, previous_state, policy_in
   return 'staked_valuation', policy_input['staked_valuation']
 
 
-CONSTANTS = load_constants()
-
-
-def constant_stake_policy(previous_yield, behavior):
+def constant_behavior_policy(*args, **kwargs):
   """
   There are two behaviors in the network: to be staked or unstaked.
 
@@ -138,10 +150,17 @@ def constant_stake_policy(previous_yield, behavior):
   """
   return 1
 
-def proactive_stake_policy(previous_yield, behavior):
+def proactive_behavior_policy(behavior, previous_yield, yield_location, yield_scale):
   """
   There are two behaviors in the network: to be staked or unstaked.
 
   This policy computes the probability that a given member maintains
   their current behavior.
   """
+  stake_propensity = sigmoid(yield_scale * (previous_yield - yield_location))
+  keep_strat_frac = stake_propensity if behavior == 'staked' else 1 - stake_propensity
+  return beta.rvs(
+    (keep_strat_frac * 100) + 1,
+    ((1 - keep_strat_frac) * 100) + 1,
+    size=1
+  ).item()

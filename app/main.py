@@ -26,16 +26,16 @@ from model import (
   s_staked_dilution,
   s_unstaked_valuation,
   s_staked_valuation,
-  constant_stake_policy,
-  proactive_stake_policy,
+  constant_behavior_policy,
+  proactive_behavior_policy,
 )
 from utils import CadCadSimulationBuilder, load_constants
 
 
 C = CONSTANTS = load_constants()
 BEHAVIOR2POLICY = {
-  'Constant': constant_stake_policy,
-  'Proactive': proactive_stake_policy
+  'Constant': constant_behavior_policy,
+  'Proactive': proactive_behavior_policy
 }
 
 
@@ -44,6 +44,11 @@ BEHAVIOR2POLICY = {
 st.sidebar.markdown('# Solana Economic Simulator')
 
 run_simulation = st.sidebar.button("Run")
+
+st.sidebar.markdown('## Progress')
+
+progress_bar = st.sidebar.progress(0)
+progress_text = st.sidebar.text('0.0% Complete')
 
 st.sidebar.markdown('## Behavioral Policies')
 
@@ -57,10 +62,10 @@ staked_policy = st.sidebar.selectbox(
   ('Constant', 'Proactive')
 )
 
-st.sidebar.markdown('## Progress')
+st.sidebar.markdown('## Proactive Policy Parameters')
 
-progress_bar = st.sidebar.progress(0)
-progress_text = st.sidebar.text('0.0% Complete')
+yield_location = st.sidebar.slider("Yield Location", 0., .1, C['yield_location'], .01)
+yield_scale = st.sidebar.slider("Yield Scale", 10., 50., C['yield_scale'], 10.)
 
 st.sidebar.markdown('## Economic parameters')
 
@@ -107,6 +112,8 @@ simulation = CadCadSimulationBuilder.build(
         'initial_valuation': INITIAL_VALUATION,
         'unstaked_policy': BEHAVIOR2POLICY[unstaked_policy],
         'staked_policy': BEHAVIOR2POLICY[staked_policy],
+        'yield_location': yield_location,
+        'yield_scale': yield_scale,
     },
     initial_state={
         'inflation': base_infl_rate,
