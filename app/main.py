@@ -9,6 +9,7 @@ import streamlit as st
 
 from chart import (
   PercStakedAltairChart,
+  StakerYieldAltairChart,
   DilutionAltairChart,
   ValuationAltairChart,
 )
@@ -176,12 +177,7 @@ stat2meta = OrderedDict({
     'label': 'Inflation',
     'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
-  },
-  'staker_yield': {
-    'label': '% Yield on Stake',
-    'delta_func': lambda curr, prev: (curr - prev) / prev,
-    'format_func': format_float_stat
-  },
+  }
 })
 
 # Define layout
@@ -213,6 +209,7 @@ for i in range(num_steps if run_simulation else 1):
   if i == 0:
     with primary_plot_container:
       perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
+      staker_yield_chart = StakerYieldAltairChart.build(row, num_steps)
     col1, col2 = secondary_plot_container.columns(2)
     with col1:
       dilution_chart = DilutionAltairChart.build(row, num_steps)
@@ -220,6 +217,7 @@ for i in range(num_steps if run_simulation else 1):
       valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
   else:
     perc_staked_chart.add_rows(row)
+    staker_yield_chart.add_rows(row)
     dilution_chart.add_rows(row)
     valuation_chart.add_rows(row)
   # Finally

@@ -16,6 +16,7 @@ class AltairChart(ABC):
   def build(cls):
     raise NotImplementedError
 
+
 class PercStakedAltairChart(AltairChart):
 
   def add_rows(self, row):
@@ -38,6 +39,32 @@ class PercStakedAltairChart(AltairChart):
       )
     ).properties(
       title='% of Total SOL Staked Over Time'
+    )
+    return cls(chart)
+
+
+class StakerYieldAltairChart(AltairChart):
+
+  def add_rows(self, row):
+    self.chart.add_rows(self._preprocess(row))
+
+  @classmethod
+  def _preprocess(cls, row):
+    return row.assign(staker_yield = row['staker_yield'] * 100)
+
+  @classmethod
+  def build(cls, df, num_steps):
+    chart = alt.Chart(cls._preprocess(df)).mark_line().encode(
+      x=alt.X('timestep',
+        scale=alt.Scale(domain=(0, num_steps - 1)),
+        axis=alt.Axis(tickMinStep = 1)
+      ),
+      y=alt.Y('staker_yield',
+        scale=alt.Scale(domain=(0, 20)),
+        title="% Yield"
+      )
+    ).properties(
+      title='% Yield on Staked Tokens'
     )
     return cls(chart)
 
