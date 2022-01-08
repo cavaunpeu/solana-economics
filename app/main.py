@@ -33,7 +33,7 @@ from utils import CadCadSimulationBuilder, load_constants
 
 
 C = CONSTANTS = load_constants()
-STRATEGY2POLICY = {
+BEHAVIOR2POLICY = {
   'Constant': constant_stake_policy,
   'Proactive': proactive_stake_policy
 }
@@ -45,7 +45,7 @@ st.sidebar.markdown('# Solana Economic Simulator')
 
 run_simulation = st.sidebar.button("Run")
 
-st.sidebar.markdown('## Policies')
+st.sidebar.markdown('## Behavioral Policies')
 
 unstaked_policy = st.sidebar.selectbox(
   'Unstaked Policy',
@@ -105,8 +105,8 @@ simulation = CadCadSimulationBuilder.build(
         'vdtr_comm_perc': vdtr_comm_perc,
         'vdtr_uptime_freq': vdtr_uptime_freq,
         'initial_valuation': INITIAL_VALUATION,
-        'unstaked_policy': STRATEGY2POLICY[unstaked_policy],
-        'staked_policy': STRATEGY2POLICY[staked_policy],
+        'unstaked_policy': BEHAVIOR2POLICY[unstaked_policy],
+        'staked_policy': BEHAVIOR2POLICY[staked_policy],
     },
     initial_state={
         'inflation': base_infl_rate,

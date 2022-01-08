@@ -58,8 +58,8 @@ def p_staker_behavior(params, substep, state_history, previous_state):
   _sol_unstaked = total_supply - _sol_staked
 
   # Update staked and unstaked behaviors.
-  staked_keep_strat_frac = params['staked_policy'](previous_state['staker_yield'], strategy='staked')
-  unstaked_keep_strat_frac = params['unstaked_policy'](previous_state['staker_yield'], strategy='unstaked')
+  staked_keep_strat_frac = params['staked_policy'](previous_state['staker_yield'], behavior='staked')
+  unstaked_keep_strat_frac = params['unstaked_policy'](previous_state['staker_yield'], behavior='unstaked')
   sol_staked = staked_keep_strat_frac * _sol_staked + (1 - unstaked_keep_strat_frac) * _sol_unstaked
 
   # Update definite parameters for current timestep.
@@ -129,19 +129,19 @@ def s_staked_valuation(params, substep, state_history, previous_state, policy_in
 CONSTANTS = load_constants()
 
 
-def constant_stake_policy(previous_yield, strategy):
+def constant_stake_policy(previous_yield, behavior):
   """
-  There are two strategies in the network: to be staked or unstaked.
+  There are two behaviors in the network: to be staked or unstaked.
 
   This policy computes the probability that a given member maintains
-  their current strategy.
+  their current behavior.
   """
   return 1
 
-def proactive_stake_policy(previous_yield, strategy):
+def proactive_stake_policy(previous_yield, behavior):
   """
-  There are two strategies in the network: to be staked or unstaked.
+  There are two behaviors in the network: to be staked or unstaked.
 
   This policy computes the probability that a given member maintains
-  their current strategy.
+  their current behavior.
   """
