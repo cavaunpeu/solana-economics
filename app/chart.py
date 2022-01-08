@@ -95,7 +95,6 @@ class DilutionAltairChart(AltairChart):
       scale=alt.Scale(domain=(0, num_steps - 1))
     ),
     y=alt.Y('dilution',
-      scale=alt.Scale(domain=(-10, 10)),
       title="% Dilution"
     ),
     color='cohort'
@@ -130,7 +129,6 @@ class ValuationAltairChart(AltairChart):
       axis=alt.Axis(tickMinStep = 1)
     ),
     y=alt.Y('valuation',
-      scale=alt.Scale(domain=(initial_valuation * .25, initial_valuation * 1.75)),
       title="U.S. Dollars ($)"
     ),
     color='cohort'
