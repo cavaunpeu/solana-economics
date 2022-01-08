@@ -1,12 +1,10 @@
 
 from collections import OrderedDict
-import os
 import time
 
 import altair as alt
 from millify import millify
 import numpy as np
-from ruamel.yaml import YAML
 import streamlit as st
 
 from chart import (
@@ -28,15 +26,17 @@ from model import (
   s_staked_dilution,
   s_unstaked_valuation,
   s_staked_valuation,
+  constant_stake_policy,
+  proactive_stake_policy,
 )
-from utils import CadCadSimulationBuilder
+from utils import CadCadSimulationBuilder, load_constants
 
 
-CONFIG_PATH = os.path.join(
-  os.path.dirname(__file__),
-  'const.yaml'
-)
-C = CONSTANTS = YAML(typ='safe').load(open(CONFIG_PATH))
+C = CONSTANTS = load_constants()
+BOX2POLICY = {
+  'Constant': constant_stake_policy,
+  'Proactive': proactive_stake_policy
+}
 
 
 # Define sidebar
@@ -44,6 +44,18 @@ C = CONSTANTS = YAML(typ='safe').load(open(CONFIG_PATH))
 st.sidebar.markdown('# Solana Economic Simulator')
 
 run_simulation = st.sidebar.button("Run")
+
+st.sidebar.markdown('## Policies')
+
+unstaked_policy = st.sidebar.selectbox(
+  'Unstaked Policy',
+  ('Constant', 'Proactive')
+)
+
+staked_policy = st.sidebar.selectbox(
+  'Staked Policy',
+  ('Constant', 'Proactive')
+)
 
 st.sidebar.markdown('## Progress')
 
@@ -92,7 +104,9 @@ simulation = CadCadSimulationBuilder.build(
         'long_term_infl_rate': long_term_infl_rate,
         'vdtr_comm_perc': vdtr_comm_perc,
         'vdtr_uptime_freq': vdtr_uptime_freq,
-        'initial_valuation': INITIAL_VALUATION
+        'initial_valuation': INITIAL_VALUATION,
+        'unstaked_policy': BOX2POLICY[unstaked_policy],
+        'staked_policy': BOX2POLICY[staked_policy],
     },
     initial_state={
         'inflation': base_infl_rate,
@@ -110,7 +124,7 @@ simulation = CadCadSimulationBuilder.build(
     partial_state_update_blocks=[
       {
             'policies': {
-              'staker_behavior': p_staker_behavior,
+              'staker_behavior': p_staker_behavior
             },
             'variables': {
               'sol_staked': s_sol_staked,

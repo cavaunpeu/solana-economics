@@ -1,3 +1,6 @@
+from utils import load_constants
+
+
 def compute_staker_yield(inflation, uptime, commission, perc_staked):
   return inflation * uptime * (1 - commission) / perc_staked
 
@@ -27,45 +30,54 @@ def compute_staked_dilution(inflation, perc_staked):
 
 
 def p_staker_behavior(params, substep, state_history, previous_state):
-    """
-    Compute the % of total SOL that will be staked in upcoming timestep.
+  """
+  Compute the % of total SOL that will be staked in upcoming timestep.
 
-    New SOL issued via inflation is awarded to stakers, and is automatically
-    restaked, *subject to the stakers withdrawing this stake.*
-    """
-    params,   = params  # I don't know why this is necessary.
-    base_rate = params['base_infl_rate']
-    grow_rate = params['dis_infl_rate']
-    ltr       = params['long_term_infl_rate']
-    timestep  = previous_state['timestep'] + 1
+  New SOL issued via inflation is awarded to stakers, and is automatically
+  restaked, *subject to the stakers withdrawing this stake.*
+  """
+  params,   = params  # I don't know why this is necessary.
+  base_rate = params['base_infl_rate']
+  grow_rate = params['dis_infl_rate']
+  ltr       = params['long_term_infl_rate']
+  timestep  = previous_state['timestep'] + 1
 
-    # Update parameters given previous timestep.
-    inflation_prev = previous_state['inflation']
-    perc_staked_prev = previous_state['perc_staked']
-    unstaked_valuation = (1 + compute_unstaked_dilution(inflation_prev)) * previous_state['unstaked_valuation']
-    staked_valuation = (1 + compute_staked_dilution(inflation_prev, perc_staked_prev)) * previous_state['staked_valuation']
-    total_supply = previous_state['total_supply'] * (1 + inflation_prev)
-    award = previous_state['total_supply'] * inflation_prev
+  # Update parameters given previous timestep.
+  inflation_prev = previous_state['inflation']
+  perc_staked_prev = previous_state['perc_staked']
+  unstaked_valuation = (1 + compute_unstaked_dilution(inflation_prev)) * previous_state['unstaked_valuation']
+  staked_valuation = (1 + compute_staked_dilution(inflation_prev, perc_staked_prev)) * previous_state['staked_valuation']
+  total_supply = previous_state['total_supply'] * (1 + inflation_prev)
+  award = previous_state['total_supply'] * inflation_prev
 
-    # Compute staker behavior for current timestep.
-    new_stake = previous_state['sol_staked'] + award
+  # Compute definite parameters for upcoming timestep.
+  inflation = compute_inflation_rate(base_rate, grow_rate, ltr, timestep)
 
-    # Compute parameters for current timestep.
-    inflation = compute_inflation_rate(base_rate, grow_rate, ltr, timestep)
-    perc_staked = new_stake / total_supply
-    unstaked_dilution = compute_unstaked_dilution(inflation)
-    staked_dilution = compute_staked_dilution(inflation, perc_staked)
+  # Compute tentative parameters for upcoming timestep.
+  _sol_staked = previous_state['sol_staked'] + award
+  _sol_unstaked = total_supply - _sol_staked
 
-    return {
-      'sol_staked': new_stake,
-      'perc_staked': perc_staked,
-      'total_supply': total_supply,
-      'inflation': inflation,
-      'unstaked_dilution': unstaked_dilution,
-      'staked_dilution': staked_dilution,
-      'unstaked_valuation': unstaked_valuation,
-      'staked_valuation': staked_valuation,
-    }
+  # Update staked and unstaked behaviors.
+  staked_keep_strat_frac = params['staked_policy'](previous_state['staker_yield'], strategy='staked')
+  unstaked_keep_strat_frac = params['unstaked_policy'](previous_state['staker_yield'], strategy='unstaked')
+  sol_staked = staked_keep_strat_frac * _sol_staked + (1 - unstaked_keep_strat_frac) * _sol_unstaked
+
+  # Update definite parameters for current timestep.
+  perc_staked = sol_staked / total_supply
+  unstaked_dilution = compute_unstaked_dilution(inflation)
+  staked_dilution = compute_staked_dilution(inflation, perc_staked)
+
+  return {
+    'sol_staked': sol_staked,
+    'perc_staked': perc_staked,
+    'total_supply': total_supply,
+    'inflation': inflation,
+    'unstaked_dilution': unstaked_dilution,
+    'staked_dilution': staked_dilution,
+    'unstaked_valuation': unstaked_valuation,
+    'staked_valuation': staked_valuation,
+  }
+  return p_staker_behavior
 
 
 def s_perc_staked(params, substep, state_history, previous_state, policy_input):
@@ -112,3 +124,24 @@ def s_unstaked_valuation(params, substep, state_history, previous_state, policy_
 
 def s_staked_valuation(params, substep, state_history, previous_state, policy_input):
   return 'staked_valuation', policy_input['staked_valuation']
+
+
+CONSTANTS = load_constants()
+
+
+def constant_stake_policy(previous_yield, strategy):
+  """
+  There are two strategies in the network: to be staked or unstaked.
+
+  This policy computes the probability that a given member maintains
+  their current strategy.
+  """
+  return 1
+
+def proactive_stake_policy(previous_yield, strategy):
+  """
+  There are two strategies in the network: to be staked or unstaked.
+
+  This policy computes the probability that a given member maintains
+  their current strategy.
+  """

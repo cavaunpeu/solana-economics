@@ -1,11 +1,22 @@
 from collections import deque
+from enum import Enum
+import os
 from typing import Dict
 
+from ruamel.yaml import YAML
 import pandas as pd
 
 from cadCAD.configuration import Configuration
 from cadCAD.configuration.utils import config_sim
 from cadCAD.engine import ExecutionMode, ExecutionContext, Executor
+
+
+def load_constants():
+  config_path = os.path.join(
+    os.path.dirname(__file__),
+    'const.yaml'
+  )
+  return YAML(typ='safe').load(open(config_path))
 
 
 class CadCadSimulationBuilder:
