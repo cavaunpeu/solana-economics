@@ -185,22 +185,32 @@ class StakePropensityChart:
 
   @classmethod
   def build(cls, yield_location, yield_scale):
-    y = [compute_stake_propensity(prev_yield, yield_location, yield_scale) for prev_yield in cls.YIELD_VALS]
     df = pd.DataFrame({
       'previous_yield': cls.YIELD_VALS * 100,
-      'stake_propensity': y
-    })
+      'current_behavior': 'staked',
+      'policy': 'proactive',
+      'maintain_behavior_propensity': [compute_stake_propensity(prev_yield, yield_location, yield_scale) for prev_yield in cls.YIELD_VALS],
+    }).pipe(
+      lambda df: pd.concat([
+        df,
+        df.assign(
+          maintain_behavior_propensity=1 - df['maintain_behavior_propensity'],
+          current_behavior='unstaked'
+        )
+      ])
+    )
     chart = alt.Chart(df).mark_line().encode(
       x=alt.X('previous_yield',
         scale=alt.Scale(domain=(df['previous_yield'].min(), df['previous_yield'].max())),
         title="Previous Yield %"
       ),
-      y=alt.Y('stake_propensity',
-        title="Stake Propensity"
-      )
+      y=alt.Y('maintain_behavior_propensity',
+        title="Maintain Behavior Propensity"
+      ),
+      color='current_behavior'
     ).properties(
       title={
-        "text": "Stake Propensity vs. Most-Recent Yield on Staked Tokens",
+        "text": "Propensity to Maintain Behavior",
       }
     )
     return chart
