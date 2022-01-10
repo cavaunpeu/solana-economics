@@ -178,6 +178,11 @@ stat2meta = OrderedDict({
     'label': 'Inflation',
     'delta_func': lambda curr, prev: (curr - prev) / prev,
     'format_func': format_float_stat
+  },
+  'staker_yield': {
+    'label': 'Staker Yield',
+    'delta_func': lambda curr, prev: (curr - prev) / prev,
+    'format_func': format_float_stat
   }
 })
 
