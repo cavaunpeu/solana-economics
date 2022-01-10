@@ -43,7 +43,7 @@ BEHAVIOR2POLICY = {
 
 # Define sidebar
 
-st.sidebar.markdown('# Simulator')
+st.sidebar.markdown('# Simulation')
 
 run_simulation = st.sidebar.button("Run")
 
@@ -190,7 +190,7 @@ stat2meta = OrderedDict({
 
 st.markdown('# Solana Economic Simulator')
 
-if not run_simulation:
+with st.expander("See description"):
 
   st.markdown('## Description')
 
@@ -220,51 +220,50 @@ if not run_simulation:
   In the *constant* policy, a participant's behavior remains constant throughout.
   """)
 
-else:
+st.markdown('## Results')
 
-  st.markdown('## Results')
+# Define layout
+stats_dboard = st.empty()
+primary_plot_container = st.container()
+secondary_plot_container = st.container()
 
-  # Define layout
-  stats_dboard = st.empty()
-  primary_plot_container = st.container()
-  secondary_plot_container = st.container()
+# Simulate
 
-  # Simulate
+prevrow = None
 
-  prevrow = None
-
-  for i in range(num_steps if run_simulation else 1):
-    row = df.iloc[[i]]
-    # Update stats
-    cols = stats_dboard.columns(len(stat2meta))
-    for ((stat, meta), col) in zip(stat2meta.items(), cols):
-      if prevrow is not None and meta['delta_func'] is not None:
-        delta = meta['delta_func'](row[stat].item(), prevrow[stat].item())
-        delta = meta['format_func'](delta)
-      else:
-        delta = None
-      with col:
-        st.metric(
-          label=meta['label'],
-          value=meta['format_func'](row[stat]),
-          delta=delta
-        )
-    # Update plots
-    if i == 0:
-      with primary_plot_container:
-        perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
-        staker_yield_chart = StakerYieldAltairChart.build(row, num_steps)
-      col1, col2 = secondary_plot_container.columns(2)
-      with col1:
-        dilution_chart = DilutionAltairChart.build(row, num_steps)
-      with col2:
-        valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
+for i in range(num_steps if run_simulation else 1):
+  row = df.iloc[[i]]
+  # Update stats
+  cols = stats_dboard.columns(len(stat2meta))
+  for ((stat, meta), col) in zip(stat2meta.items(), cols):
+    if prevrow is not None and meta['delta_func'] is not None:
+      delta = meta['delta_func'](row[stat].item(), prevrow[stat].item())
+      delta = meta['format_func'](delta)
     else:
-      perc_staked_chart.add_rows(row)
-      staker_yield_chart.add_rows(row)
-      dilution_chart.add_rows(row)
-      valuation_chart.add_rows(row)
-    # Finally
+      delta = None
+    with col:
+      st.metric(
+        label=meta['label'],
+        value=meta['format_func'](row[stat]),
+        delta=delta
+      )
+  # Update plots
+  if i == 0:
+    with primary_plot_container:
+      perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
+      staker_yield_chart = StakerYieldAltairChart.build(row, num_steps)
+    col1, col2 = secondary_plot_container.columns(2)
+    with col1:
+      dilution_chart = DilutionAltairChart.build(row, num_steps)
+    with col2:
+      valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
+  else:
+    perc_staked_chart.add_rows(row)
+    staker_yield_chart.add_rows(row)
+    dilution_chart.add_rows(row)
+    valuation_chart.add_rows(row)
+  # Finally
+  if run_simulation:
     frac_complete = (i + 1) / num_steps
     time.sleep(C['speed'])
     progress_bar.progress(frac_complete)
