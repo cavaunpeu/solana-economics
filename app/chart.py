@@ -187,7 +187,7 @@ class StakePropensityChart:
   def build(cls, yield_location, yield_scale):
     df = pd.DataFrame({
       'previous_yield': cls.YIELD_VALS * 100,
-      'current_behavior': 'staked',
+      'current_behavior': 'Staked',
       'policy': 'proactive',
       'maintain_behavior_propensity': [compute_stake_propensity(prev_yield, yield_location, yield_scale) for prev_yield in cls.YIELD_VALS],
     }).pipe(
@@ -195,7 +195,7 @@ class StakePropensityChart:
         df,
         df.assign(
           maintain_behavior_propensity=1 - df['maintain_behavior_propensity'],
-          current_behavior='unstaked'
+          current_behavior='Unstaked'
         )
       ])
     )
