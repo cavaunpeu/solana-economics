@@ -185,78 +185,81 @@ stat2meta = OrderedDict({
 
 st.markdown('# Solana Economic Simulator')
 
-st.markdown('## Description')
+if not run_simulation:
 
-st.write("""
-In Solana, new SOL are minted on a given inflation schedule. These SOL are then distributed to those who "stake" their existing coins: participating in, or delegating to a validator who participates in, the validator of transactions on the Solana blockchain.
+  st.markdown('## Description')
 
-In this vein, staking SOL has a positive, dynamic yield. Conversely, the value of unstaked SOL is continuously diluted.
+  st.write("""
+  In Solana, new SOL are minted on a given inflation schedule. These SOL are then distributed to those who "stake" their existing coins: participating in, or delegating to a validator who participates in, the validator of transactions on the Solana blockchain.
 
-For more information on this system, please refer to the [Solana Economics Overview](https://docs.solana.com/economics_overview).
-""")
+  In this vein, staking SOL has a positive, dynamic yield. Conversely, the value of unstaked SOL is continuously diluted.
 
-st.markdown('## Simulation')
+  For more information on this system, please refer to the [Solana Economics Overview](https://docs.solana.com/economics_overview).
+  """)
 
-st.write("""
+  st.markdown('## Simulation')
 
-Below, we simulate this process. On the left, you can choose the "Staked" and "Unstaked" policy: the logic used to update ones strategy in this game.
+  st.write("""
 
-In the *proactive* policy, we define a participant's propensity to change their behavior varies with the staker yield in the previous timestep.
-""")
+  Below, we simulate this process. On the left, you can choose the "Staked" and "Unstaked" policy: the logic used to update ones strategy in this game.
 
-st.altair_chart(
-  StakePropensityChart.build(yield_location, yield_scale),
-  use_container_width=True
-)
+  In the *proactive* policy, we define a participant's propensity to change their behavior varies with the staker yield in the previous timestep.
+  """)
 
-st.write("""
-In the *constant* policy, a participant's behavior remains constant throughout.
-""")
+  st.altair_chart(
+    StakePropensityChart.build(yield_location, yield_scale),
+    use_container_width=True
+  )
 
-st.markdown('## Results')
+  st.write("""
+  In the *constant* policy, a participant's behavior remains constant throughout.
+  """)
 
-# Define layout
-stats_dboard = st.empty()
-primary_plot_container = st.container()
-secondary_plot_container = st.container()
+else:
 
-# Simulate
+  st.markdown('## Results')
 
-prevrow = None
+  # Define layout
+  stats_dboard = st.empty()
+  primary_plot_container = st.container()
+  secondary_plot_container = st.container()
 
-for i in range(num_steps if run_simulation else 1):
-  row = df.iloc[[i]]
-  # Update stats
-  cols = stats_dboard.columns(len(stat2meta))
-  for ((stat, meta), col) in zip(stat2meta.items(), cols):
-    if prevrow is not None and meta['delta_func'] is not None:
-      delta = meta['delta_func'](row[stat].item(), prevrow[stat].item())
-      delta = meta['format_func'](delta)
+  # Simulate
+
+  prevrow = None
+
+  for i in range(num_steps if run_simulation else 1):
+    row = df.iloc[[i]]
+    # Update stats
+    cols = stats_dboard.columns(len(stat2meta))
+    for ((stat, meta), col) in zip(stat2meta.items(), cols):
+      if prevrow is not None and meta['delta_func'] is not None:
+        delta = meta['delta_func'](row[stat].item(), prevrow[stat].item())
+        delta = meta['format_func'](delta)
+      else:
+        delta = None
+      with col:
+        st.metric(
+          label=meta['label'],
+          value=meta['format_func'](row[stat]),
+          delta=delta
+        )
+    # Update plots
+    if i == 0:
+      with primary_plot_container:
+        perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
+        staker_yield_chart = StakerYieldAltairChart.build(row, num_steps)
+      col1, col2 = secondary_plot_container.columns(2)
+      with col1:
+        dilution_chart = DilutionAltairChart.build(row, num_steps)
+      with col2:
+        valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
     else:
-      delta = None
-    with col:
-      st.metric(
-        label=meta['label'],
-        value=meta['format_func'](row[stat]),
-        delta=delta
-      )
-  # Update plots
-  if i == 0:
-    with primary_plot_container:
-      perc_staked_chart = PercStakedAltairChart.build(row, num_steps)
-      staker_yield_chart = StakerYieldAltairChart.build(row, num_steps)
-    col1, col2 = secondary_plot_container.columns(2)
-    with col1:
-      dilution_chart = DilutionAltairChart.build(row, num_steps)
-    with col2:
-      valuation_chart = ValuationAltairChart.build(row, num_steps, INITIAL_VALUATION)
-  else:
-    perc_staked_chart.add_rows(row)
-    staker_yield_chart.add_rows(row)
-    dilution_chart.add_rows(row)
-    valuation_chart.add_rows(row)
-  # Finally
-  if run_simulation:
+      perc_staked_chart.add_rows(row)
+      staker_yield_chart.add_rows(row)
+      dilution_chart.add_rows(row)
+      valuation_chart.add_rows(row)
+    # Finally
     frac_complete = (i + 1) / num_steps
     time.sleep(C['speed'])
     progress_bar.progress(frac_complete)
