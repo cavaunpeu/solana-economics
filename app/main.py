@@ -40,10 +40,9 @@ BEHAVIOR2POLICY = {
   'Proactive': proactive_behavior_policy
 }
 
-
 # Define sidebar
 
-st.sidebar.markdown('# Simulation')
+st.sidebar.markdown("# Economic Simulator")
 
 run_simulation = st.sidebar.button("Run")
 
@@ -188,7 +187,7 @@ stat2meta = OrderedDict({
 
 # Define description
 
-st.markdown('# Solana Economic Simulator')
+st.image("app/assets/logo.png")
 
 with st.expander("See description"):
 
