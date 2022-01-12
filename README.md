@@ -10,6 +10,6 @@ For more information on this system, please refer to the [Solana Economics Overv
 
 A web app for this simulation can be found [here](https://share.streamlit.io/cavaunpeu/solana-economics/main/app/main.py).
 
-## Screenshot
+It looks like:
 
 ![screenshot](./screenshot.png)
