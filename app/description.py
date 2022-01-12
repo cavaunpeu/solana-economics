@@ -32,6 +32,19 @@ def description(yield_location, yield_scale):
   In the *constant* policy, a participant's behavior remains constant throughout.
   """)
 
+  st.markdown('## Cohort-based Modeling')
+
+  st.write("""
+  Please note, policies are not *agent-based*; instead, they are *cohort-based.*
+
+  For instance, imagine our policies are:
+
+  * Staked: Proactive
+  * Unstaked: Constant
+
+  In a given timestep, if a proportion of the `Staked` cohort updates their behavior to `Unstaked`, then their policy (Proactive) flips to that of the latter (Constant).
+  """)
+
   st.markdown('## About')
 
   st.write("""
