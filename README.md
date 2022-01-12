@@ -5,3 +5,11 @@ In Solana, new SOL are minted on a given inflation schedule. These SOL are then 
 In this vein, staking SOL has a positive, dynamic yield. Conversely, the value of unstaked SOL is continuously diluted.
 
 For more information on this system, please refer to the [Solana Economics Overview](https://docs.solana.com/economics_overview).
+
+## Web App
+
+A web app for this simulation can be found [here](https://share.streamlit.io/cavaunpeu/solana-economics/main/app/main.py).
+
+## Screenshot
+
+![screenshot](./screenshot.png)
