@@ -219,6 +219,15 @@ with st.expander("See description"):
   In the *constant* policy, a participant's behavior remains constant throughout.
   """)
 
+  st.markdown('## About')
+
+  st.write("""
+  This work is *not* affiliated with the official Solana project in any way.
+
+  * [Author](https://willwolf.io/)
+  * [Code](https://github.com/cavaunpeu/solana-economics)
+  """)
+
 st.markdown('## Results')
 
 # Define layout
