@@ -1,9 +1,6 @@
-from collections import OrderedDict
+
 import time
 
-import altair as alt
-from millify import millify
-import numpy as np
 import streamlit as st
 
 from chart import (
@@ -30,6 +27,7 @@ from model import (
   constant_behavior_policy,
   proactive_behavior_policy,
 )
+from stats import stat2meta
 from utils import CadCadSimulationBuilder, load_constants
 
 
@@ -155,34 +153,6 @@ assert df.index.tolist() == df['timestep'].tolist()
 # Simulation params
 
 num_steps = len(df)
-
-# Define stats dashboard
-
-format_float_stat = lambda stat: f"{np.round(stat * 100, 2).item()}%"
-format_int_stat = lambda stat: millify(stat)
-
-stat2meta = OrderedDict({
-  'timestep': {
-    'label': 'Timestep',
-    'delta_func': None,
-    'format_func': format_int_stat
-  },
-  'total_supply': {
-    'label': 'Total Supply',
-    'delta_func': lambda curr, prev: curr - prev,
-    'format_func': format_int_stat
-  },
-  'inflation': {
-    'label': 'Inflation',
-    'delta_func': lambda curr, prev: (curr - prev) / prev,
-    'format_func': format_float_stat
-  },
-  'staker_yield': {
-    'label': 'Staker Yield',
-    'delta_func': lambda curr, prev: (curr - prev) / prev,
-    'format_func': format_float_stat
-  }
-})
 
 # Define description
 
