@@ -13,3 +13,7 @@ A web app for this simulation can be found [here](https://share.streamlit.io/cav
 It looks like:
 
 ![screenshot](./screenshot.png)
+
+## Tools
+
+This simulation was built with [cadCAD](https://github.com/cadCAD-org/cadCAD), and the dashboard with [Streamlit](https://github.com/streamlit/streamlit).
