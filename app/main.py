@@ -1,3 +1,4 @@
+import os
 import time
 
 import streamlit as st
@@ -200,7 +201,7 @@ num_steps = len(df)
 
 # Define description
 
-st.image("app/assets/logo.png")
+st.image(os.path.join(os.path.dirname(__file__), "assets", "logo.png"))
 
 with st.expander("See description"):
 
